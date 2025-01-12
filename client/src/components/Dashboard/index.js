@@ -11,10 +11,7 @@ import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
 import { Loader2, LogOut, Phone, Search, Send, Menu } from 'lucide-react';
-import { SearchSection } from "../SearchSection";
 import { toast } from "react-hot-toast";
-
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const {

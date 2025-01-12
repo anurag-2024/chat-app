@@ -7,8 +7,8 @@ const SignIn = () => {
     const navigate = useNavigate();
 
     const [user, setUser] = useState({
-        email: "",
-        password: "",
+        email: "test@gmail.com",
+        password: "123",
     });
     useEffect(() => {
         const isLoggedInUser=localStorage.getItem('user:token');
