@@ -4,7 +4,7 @@ import axios from "axios";
 import { ChatState } from "../../context/ChatProvider";
 import { getSender, getSenderFull, getSenderImg } from "../../config/ChatLogics";
 import io from "socket.io-client";
-import { BASE_URL } from "../../utils/url";
+import { BASE_URL ,URL} from "../../utils/url";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button"
 import { Input } from "../ui/input";
@@ -13,6 +13,7 @@ import { Separator } from "../ui/separator";
 import { Loader2, LogOut, Phone, Search, Send, Menu } from 'lucide-react';
 import { SearchSection } from "../SearchSection";
 import { toast } from "react-hot-toast";
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -43,6 +44,11 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
 
+  useEffect(() => {
+    if (!user) {
+      navigate("/users/sign_in");
+    }
+  }, [user]);
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -51,7 +57,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchMessages();
-    const newsocket = io("http://localhost:8000");
+    const newsocket = io(URL);
     setSocket(newsocket);
     newsocket.emit("setup", user);
     newsocket.on('connected', () => {
