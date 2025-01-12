@@ -202,7 +202,7 @@ const SignUp = () => {
                     <div>
                             <button
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-violet-600 to-rose-500 text-white py-4 px-6 rounded-xl font-medium hover:opacity-90 transition duration-200 transform hover:scale-[1.02] text-lg"
+                                className="!w-full !bg-gradient-to-r !from-violet-600 !to-rose-500 !text-white !py-4 !px-6 !rounded-xl !font-medium !hover:opacity-90 !transition !duration-200 !transform !hover:scale-[1.02] !text-lg"
                             >
                                 Create Account
                             </button>

@@ -47,9 +47,9 @@ const SignIn = () => {
     }
     return (
         <div className="min-h-screen flex items-center justify-center ">
-            <div className="bg-white w-full max-w-xl p-10 rounded-3xl shadow-[0_20px_50px_rgba(128,_90,_213,_0.3)]">
+            <div className="bg-white w-full max-w-xl p-10 max-md:p-8 rounded-3xl shadow-[0_20px_50px_rgba(128,_90,_213,_0.3)]">
                 <div className="mb-10 text-center">
-                    <h1 className="text-5xl font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
+                    <h1 className="text-5xl max-md:text-4.5xl font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
                         Welcome Back
                     </h1>
                     <p className="text-gray-600 mt-3 text-lg">Sign in to continue your journey</p>
@@ -88,7 +88,7 @@ const SignIn = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-violet-600 to-rose-500 text-white py-4 px-6 rounded-xl font-medium hover:opacity-90 transition duration-200 transform hover:scale-[1.02] text-lg mt-6"
+                        className="!w-full !bg-gradient-to-r !from-violet-600 !to-rose-500 !text-white !py-4 !px-6 !rounded-xl !font-medium !hover:opacity-90 !transition !duration-200 !transform !hover:scale-[1.02] !text-lg !mt-6"
                     >
                         Sign in
                     </button>

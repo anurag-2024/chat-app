@@ -10,8 +10,9 @@ import { Button } from "../ui/button"
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
-import { Loader2, LogOut, Phone, Search, Send } from 'lucide-react';
+import { Loader2, LogOut, Phone, Search, Send, Menu } from 'lucide-react';
 import { SearchSection } from "../SearchSection";
+import { toast } from "react-hot-toast";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -35,6 +36,13 @@ const Dashboard = () => {
   const [userStatus, setUserStatus] = useState({});
   const [onlineUsers,setOnlineUsers]=useState();
   console.log(onlineUsers);
+  const [searchText, setSearchText] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -194,74 +202,187 @@ const Dashboard = () => {
     }
   }, [socket]);
 
+  const searchUser = async () => {
+    if (!searchText) {
+      toast.error("Enter a name to search");
+      return;
+    }
+    setSearchLoading(true);
+    const userId = {
+      "userId": user.id,
+    };
+    try {
+      const { data } = await axios.post(`${BASE_URL}/user?search=${searchText}`, userId);
+      setSearchResult(data);
+      setShowModal(true);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      toast.error("An error occurred while searching");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const clearSearchResults = () => {
+    setSearchResult([]);
+    setSearchText("");
+    setShowModal(false);
+  };
+
+  const accessChat = async (userId) => {
+    try {
+      setSearchLoading(true);
+      const datatransfer = {
+        "userId": userId,
+        "senderId": user.id
+      };
+      const { data } = await axios.post(`${BASE_URL}/chat`, datatransfer);
+      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
+      setSelectedChat(data);
+      setSearchLoading(false);
+    } catch (error) {
+      console.error("Error accessing chat:", error);
+      toast.error("Failed to access chat");
+      setSearchLoading(false);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
-    <div className="flex w-[80%]">
+    <div className="flex w-full lg:w-[70%] h-[100%]">
+      {/* Hamburger Icon for Mobile */}
+      <div className="lg:hidden p-3">
+        <Button onClick={toggleSidebar} className="p-1">
+          <Menu className="w-10 h-10" />
+        </Button>
+      </div>
+
       {/* Sidebar */}
-      <div className="w-3/13 border-r border-border bg-gray-100">
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center space-x-4">
-            <Avatar>
-              <AvatarImage src={user?.imageUrl} alt={user?.fullName} />
-              <AvatarFallback>{user?.fullName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-semibold">{user?.fullName}</h3>
-              <p className="text-sm text-muted-foreground">My Account</p>
+      {((isMobileView&&sidebarOpen)||!isMobileView)&&
+        <div className="w-2/8 border-r border-border bg-gray-100">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center space-x-4">
+              <Avatar>
+                <AvatarImage src={user?.imageUrl} alt={user?.fullName} />
+                <AvatarFallback>{user?.fullName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold">{user?.fullName}</h3>
+                <p className="text-sm text-muted-foreground">My Account</p>
+              </div>
             </div>
+            <Button variant="outline" className="mt-4 w-full" onClick={userLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </div>
-          <Button variant="outline" className="mt-4 w-full" onClick={userLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-        <div className="p-4">
-          {/* <div className="relative">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search chats..."
-              className="pl-8"
-            />
-          </div> */}
-          <ScrollArea className="h-[calc(100vh-200px)] mt-4">
-            <div className="space-y-2">
-              {chats?.map((chat) => (
-                <div
-                  key={chat._id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedChat === chat
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  onClick={() => setSelectedChat(chat)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage
-                        src={!chat.isGroupChat ? getSenderImg(user.id, chat.users) : chat.chatName}
-                        alt={!chat.isGroupChat ? getSender(user.id, chat.users) : chat.chatName}
-                      />
-                      <AvatarFallback>{(!chat.isGroupChat ? getSender(user.id, chat.users) : chat.chatName).charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-medium">
-                        {!chat.isGroupChat ? getSender(user.id, chat.users) : chat.chatName}
-                        {onlineUsers?.includes(chat.users[0]._id) && (
-                          <span className="text-green-500 ml-1 text-lg">●</span>
-                        )}
-                      </h4>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {chat.latestMessage?.content || "No messages yet"}
-                      </p>
+          <div className="p-4">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search users..."
+                className="pl-8"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+              <Button onClick={searchUser} className="pl-8">
+                <Search />
+                Search
+              </Button>
+            </div>
+            <ScrollArea className="h-[calc(100vh-300px)] mt-4">
+              <div className="space-y-2">
+                {chats?.map((chat) => (
+                  <div
+                    key={chat._id}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedChat === chat
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    onClick={() => {
+                      setSelectedChat(chat);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarImage
+                          src={!chat.isGroupChat ? getSenderImg(user.id, chat.users) : chat.chatName}
+                          alt={!chat.isGroupChat ? getSender(user.id, chat.users) : chat.chatName}
+                        />
+                        <AvatarFallback>{(!chat.isGroupChat ? getSender(user.id, chat.users) : chat.chatName).charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-medium">
+                          {!chat.isGroupChat ? getSender(user.id, chat.users) : chat.chatName}
+                          {onlineUsers?.includes(chat.users[0]._id) && (
+                            <span className="text-green-500 ml-1 text-lg">●</span>
+                          )}
+                        </h4>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {chat.latestMessage?.content || "No messages yet"}
+                        </p>
+                      </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      }
+    
+
+      {/* Modal for Search Results */}
+      {showModal && (
+        <div className="absolute left-[calc(15%+calc(100%/8))] max-md:left-[calc(5%+calc(100%/8))] max-md:mt-[calc(40%)] top-16 z-50 w-80 bg-white rounded-lg shadow-lg p-4">
+          <button onClick={clearSearchResults} className="absolute top-2 right-2">X</button>
+          <h3 className="font-semibold mb-4">Search Results</h3>
+          {searchLoading ? (
+            <Loader2 className="w-8 h-8 animate-spin" />
+          ) : (
+            <div className="space-y-4">
+              {searchResult?.map((result) => (
+                <div
+                  key={result._id}
+                  className="flex items-center space-x-4 p-2 rounded-lg hover:bg-accent cursor-pointer"
+                  onClick={() => accessChat(result._id)}
+                >
+                  <Avatar>
+                    <AvatarImage src={result.pic} alt={result.fullName} />
+                    <AvatarFallback>{result.fullName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-medium">{result.fullName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-semibold">Email:</span> {result.email}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          )}
+          <Button onClick={clearSearchResults} className="mt-4">Clear</Button>
         </div>
-      </div>
+      )}
 
       {/* Main Chat Area */}
-      <div className=" w-8/13 flex-1 flex flex-col bg-white">
+      {((isMobileView&&!sidebarOpen)||!isMobileView)&&
+      <div className={`flex-1 flex flex-col bg-white`}>
         {selectedChat ? (
           <>
             <div className="bg-gray-200 border-b border-border p-4 flex items-center justify-between">
@@ -340,12 +461,13 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      }
 
       {/* Search Users Section */}
-      <div className="w-4/13 border-l border-border p-4 hidden lg:block bg-gray-50">
-        <h3 className="font-semibold mb-4">Search Users</h3>
-        <SearchSection />
-      </div>
+        {/* <div className="w-4/13 border-l border-border p-4 hidden lg:block bg-gray-50">
+          <h3 className="font-semibold mb-4">Search Users</h3>
+          <SearchSection />
+        </div> */}
     </div>
   );
 };
